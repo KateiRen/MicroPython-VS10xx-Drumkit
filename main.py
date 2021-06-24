@@ -12,8 +12,8 @@ class VS10XXMidi(vs10xx.Player):
     def __init__(self, spi, xResetPin, dReqPin, xDCSPin, xCSPin, CSPin = None):
         super().__init__(spi, xResetPin, dReqPin, xDCSPin, xCSPin, CSPin)
         self.__setupMIDI__()
-        # Serial.println("Basic Instruments");
-        # talkMIDI(0xB0, 0, 0x00); //Default bank GM1
+        print("Set Basic Instruments")
+        self.talkMIDI(0xB0, 0, 0x00) # Set Default bank GM1
 
 
     def __setupMIDI__(self):
@@ -60,8 +60,10 @@ midiplayer = VS10XXMidi(
     CSPin = None
 )
 
-# print("VS10xx Player set up.")
-# player.setVolume(0.8) # the range is 0 to 1.0
+print("VS10xx Player set up.")
+player.setVolume(0.8) # the range is 0 to 1.0
+print("Volume set")
+
 
 
 #VSLoadUserCode();
