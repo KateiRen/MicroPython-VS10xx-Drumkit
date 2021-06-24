@@ -1,3 +1,4 @@
+from time import sleep_ms
 import vs10xx
 from machine import SPI
 
@@ -16,18 +17,19 @@ class VS10XXMidi(vs10xx.Player):
         self.talkMIDI(0xB0, 0, 0x00) # Set Default bank GM1
 
 
-    def __setupMIDI__(self):
+    def __setupMIDI__(self): # das Muster aus Writes mit Adresse und Wert scheint zu stimmen (siehe http://www.vlsi.fi/fileadmin/software/VS10XX/vs1053b-rtmidistart.zip)
         i = 0
         while i < len(vs10xx_MIDI_Plugin):
             addr = vs10xx_MIDI_Plugin[i]
             n = vs10xx_MIDI_Plugin[i+1]
             i+=2
-            while n:
+            while n>0:
                 val = vs10xx_MIDI_Plugin[i]
                 super().writeRegister(addr, val)
-                print("Writing {value} to the address {address}".format(value=val, address=addr))
+                print("Writing {0:02x} to the address {1:02x}".format(val, addr))
                 i+=1
                 n-=1
+                # print("n =" + str(n))
 
     def sendMIDI(self, data):
         self.spi.write(bytes(0))
@@ -42,12 +44,10 @@ class VS10XXMidi(vs10xx.Player):
             self.sendMIDI(data1)
 
     def noteOn(self, channel, note, attack_velocity):
-        pass
+        self.talkMIDI(0x90 | channel, note, attack_velocity)
 
     def noteOff(self, channel, note, attack_velocity):
-        pass
-
-
+        self.talkMIDI(0x80 | channel, note, attack_velocity)
 
 spi = SPI(1, vs10xx.SPI_BAUDRATE) # SPI bus id=1 pinout: SCK = 14, MOSI = 13, MISO = 12
 
@@ -64,73 +64,9 @@ print("VS10xx Player set up.")
 player.setVolume(0.8) # the range is 0 to 1.0
 print("Volume set")
 
-
-
-#VSLoadUserCode();
- 
-
-# void VSLoadUserCode(void) {
-#   int i = 0;
-
-#   while (i<sizeof(sVS1053b_Realtime_MIDI_Plugin)/sizeof(sVS1053b_Realtime_MIDI_Plugin[0])) {
-#     unsigned short addr, n, val;
-#     addr = sVS1053b_Realtime_MIDI_Plugin[i++];
-#     n = sVS1053b_Realtime_MIDI_Plugin[i++];
-#     while (n--) {
-#       val = sVS1053b_Realtime_MIDI_Plugin[i++];
-#       VSWriteRegister(addr, val >> 8, val & 0xFF);
-#     }
-#   }
-# }                                
-
-# void VSWriteRegister(unsigned char addressbyte, unsigned char highbyte, unsigned char lowbyte){
-#   while(!digitalRead(VS_DREQ)) ; //Wait for DREQ to go high indicating IC is available
-#   digitalWrite(VS_XCS, LOW); //Select control
-
-#   //SCI consists of instruction byte, address byte, and 16-bit data word.
-#   SPI.transfer(0x02); //Write instruction
-#   SPI.transfer(addressbyte);
-#   SPI.transfer(highbyte);
-#   SPI.transfer(lowbyte);
-#   while(!digitalRead(VS_DREQ)) ; //Wait for DREQ to go high indicating command is complete
-#   digitalWrite(VS_XCS, HIGH); //Deselect Control
-# }
-
-
-
-
-# //Plays a MIDI note. Doesn't check to see that cmd is greater than 127, or that data values are less than 127
-# void talkMIDI(byte cmd, byte data1, byte data2) {
-# #if USE_SPI_MIDI
-#   //
-#   // Wait for chip to be ready (Unlikely to be an issue with real time MIDI)
-#   //
-#   while (!digitalRead(VS_DREQ))
-#     ;
-#   digitalWrite(VS_XDCS, LOW);
-# #endif
-#   sendMIDI(cmd);
-#   //Some commands only have one data byte. All cmds less than 0xBn have 2 data bytes 
-#   //(sort of: http://253.ccarh.org/handout/midiprotocol/)
-#   if( (cmd & 0xF0) <= 0xB0 || (cmd & 0xF0) >= 0xE0) {
-#     sendMIDI(data1);
-#     sendMIDI(data2);
-#   } else {
-#     sendMIDI(data1);
-#   }
-
-# #if USE_SPI_MIDI
-#   digitalWrite(VS_XDCS, HIGH);
-# #endif
-# }
-
-# //Send a MIDI note-on message.  Like pressing a piano key
-# //channel ranges from 0-15
-# void noteOn(byte channel, byte note, byte attack_velocity) {
-#   talkMIDI( (0x90 | channel), note, attack_velocity);
-# }
-
-# //Send a MIDI note-off message.  Like releasing a piano key
-# void noteOff(byte channel, byte note, byte release_velocity) {
-#   talkMIDI( (0x80 | channel), note, release_velocity);
-# }
+midiplayer.talkMIDI(0xB0, 0, 0x00) # Default bank GM1
+midiplayer.noteOn(0, 30, 127)
+print("sent noteOn")
+sleep_ms(200)
+midiplayer.noteOff(0, 30, 127)
+print("sent noteOff")
