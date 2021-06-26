@@ -62,7 +62,7 @@ class Player:
         self.xCS.value(1)
         self.xDCS.value(1)
         self.xReset.value(1)
-        self.softReset()
+        #self.softReset()
         
     def waitForDREQ(self):
         while not self.dReq.value():
